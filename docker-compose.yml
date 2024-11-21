@@ -1,0 +1,51 @@
+services:
+# -----------GPT------------------
+  database:
+        image: postgres:17
+        environment:
+            POSTGRES_PASSWORD: "senha_teste"
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./postgres-volume:/var/lib/postgresql/data
+
+  pgadmin:
+      image: dpage/pgadmin4
+      environment:
+          PGADMIN_DEFAULT_EMAIL: "teste@hotmail.com"
+          PGADMIN_DEFAULT_PASSWORD: "senha_teste"
+      ports:
+          - "16543:80"
+      depends_on:
+          - database
+  
+  backend:
+      image: node:20
+      container_name: backend
+      working_dir: /usr/src/app
+      volumes:
+        - ./backend:/usr/src/app
+      ports:
+        - "8000:8000"
+      environment:
+        NODE_ENV: "development"
+        POSTGRES_HOST: "database"
+        POSTGRES_PORT: "5432"
+        POSTGRES_USER: "teste"
+        POSTGRES_PASSWORD: "senha_teste"
+        POSTGRES_DB: "mydb"
+      command: sh -c "npm install && npm start"
+      depends_on:
+        - database
+
+  frontend:
+    image: node:20
+    container_name: frontend
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend:/usr/src/app
+    ports:
+      - "80:80"
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - backend
