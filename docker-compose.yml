@@ -15,7 +15,7 @@ services:
           PGADMIN_DEFAULT_EMAIL: "teste@hotmail.com"
           PGADMIN_DEFAULT_PASSWORD: "senha_teste"
       ports:
-          - "16543:80"
+          - "6543:6543"
       depends_on:
           - database
   

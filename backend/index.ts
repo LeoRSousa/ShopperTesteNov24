@@ -10,8 +10,8 @@ app.get("/", (req: Request, res: Response) => {
     res.send("Express + TypeScript Server");
 });
 
-import RideRouter from './routes/Ride';
-app.use('/ride', RideRouter);
+const rideRouter = require('./routes/Ride');
+app.use('/ride', rideRouter);
 
 app.listen(port, () => {
     console.log(`[server]: Server is running at http://localhost:${port}`);
