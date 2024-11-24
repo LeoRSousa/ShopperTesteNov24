@@ -1,10 +1,13 @@
 services:
-  database:
+  postgres:
     image: postgres:17
+    container_name: postgresdb
     environment:
-      POSTGRES_PASSWORD: "senha_teste"
+      POSTGRES_USER: "teste"
+      POSTGRES_PASSWORD: "teste123"
+      POSTGRES_DB: "mydb"
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - ./postgres-volume:/var/lib/postgresql/data
     networks:
@@ -12,13 +15,14 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadminweb
     environment:
-      PGADMIN_DEFAULT_EMAIL: "teste@hotmail.com"
-      PGADMIN_DEFAULT_PASSWORD: "senha_teste"
+      PGADMIN_DEFAULT_EMAIL: "teste@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "teste123"
     ports:
-      - "6543:6543"
+      - "6543:80"
     depends_on:
-      - database
+      - postgres
     networks:
       - shopperteste-network
 
@@ -31,15 +35,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      NODE_ENV: "development"
-      POSTGRES_HOST: "database"
       POSTGRES_PORT: "5432"
       POSTGRES_USER: "teste"
       POSTGRES_PASSWORD: "senha_teste"
       POSTGRES_DB: "mydb"
     command: sh -c "npm install && npm start"
     depends_on:
-      - database
+      - postgres
     networks:
       - shopperteste-network
 
@@ -50,7 +52,7 @@ services:
     volumes:
       - ./frontend:/usr/src/app
     ports:
-      - "80:80"
+      - "80:3000"
     command: sh -c "npm install && npm start"
     depends_on:
       - backend
