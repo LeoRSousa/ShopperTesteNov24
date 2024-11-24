@@ -40,22 +40,38 @@ services:
       POSTGRES_PASSWORD: "senha_teste"
       POSTGRES_DB: "mydb"
     command: sh -c "npm install && npm start"
+    develop:
+      watch:
+        - path: ./backend/package.json
+          action: rebuild
+        - path: ./app
+          target: /usr/src/app
+          action: sync
     depends_on:
       - postgres
     networks:
       - shopperteste-network
 
   frontend:
-    image: node:20
+    # image: node:20
     container_name: frontend
-    working_dir: /usr/src/app
-    volumes:
-      - ./frontend:/usr/src/app
-    ports:
-      - "80:3000"
-    command: sh -c "npm install && npm start"
+    # working_dir: /usr/src/app
+    build: 
+      context: ./frontend
     depends_on:
       - backend
+    environment:
+      NODE_ENV: production
+    ports:
+      - "80:3000"
+    # volumes:
+    #   - ./frontend:/usr/src/app
+    #   - ./frontend:/usr/src/app/node_modules
+    develop:
+      watch:
+        - path: ./frontend/package.json
+          action: rebuild
+    command: sh -c "npm install && npm start"
     networks:
       - shopperteste-network
 
