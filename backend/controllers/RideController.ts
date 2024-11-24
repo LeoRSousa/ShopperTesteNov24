@@ -6,16 +6,88 @@ function test(req: Request, res: Response): any {
     });
 }
 
+/**[Rotes API - Google Maps]
+ * Recebe as coordenadas e envia para a API calcular e retornar a distancia e o tempo
+ */
+async function computeRoute(coordinates: string[]): Promise<string> {
+    const origin: string[] = coordinates[0].split(',');
+    const destination: string[] = coordinates[1].split(',');
+    const myHeaders: Headers = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("X-Goog-Api-Key", "AIzaSyAgB4kpNS6VLRoA2Vk0a15EFU_H9PpXaI8");
+    myHeaders.append("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline");
+
+    const req_body: string = JSON.stringify({
+        "origin": {
+            "location": {
+                "latLng": {
+                    "latitude": origin[0],
+                    "longitude": origin[1]
+                }
+            }
+        },
+        "destination": {
+            "location": {
+                "latLng": {
+                    "latitude": destination[0],
+                    "longitude": destination[1] 
+                }
+            }
+        },
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_AWARE",
+        "computeAlternativeRoutes": false,
+        "routeModifiers": {
+            "avoidTolls": false,
+            "avoidHighways": false,
+            "avoidFerries": false
+        },
+        "languageCode": "pt-BR",
+        "units": "METRIC"
+    });
+
+    const requestOptions: RequestInit = {
+        method: "POST",
+        headers: myHeaders,
+        body: req_body,
+        redirect: "follow"
+    };
+
+    try {
+        const response = await fetch(
+            "https://routes.googleapis.com/directions/v2:computeRoutes",
+            requestOptions
+        );
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+        }
+        const result = await response.json();
+        const result_filtered = {
+            "distance": result.routes[0].distanceMeters,
+            "duration": result.routes[0].duration
+        }
+        return JSON.stringify(result_filtered);
+    } catch (error: any) {
+        console.error(error);
+        return "Erro ao obter rotas, contate o desenvolvedor para checar os logs!"
+    }
+
+    // fetch("https://routes.googleapis.com/directions/v2:computeRoutes", requestOptions)
+    //     .then((response) => response.text())
+    //     .then((result) => console.log(result))
+    //     .catch((error) => console.error(error));
+}
+
 function validate_entries(entries: any[]): boolean {
     var valid: boolean = true;
 
     //Caso alguma entrada seja inválida, atribui valor falso à variável 'valid'
     entries.forEach((entry) => {
-        if(entry == null || entry == '' || entry == undefined) valid = false;
+        if (entry == null || entry == '' || entry == undefined) valid = false;
     })
 
     return valid;
-} 
+}
 
 async function estimate(req: Request, res: Response): Promise<any> {
     //Recebe a origem e o destino da viagem e realiza os cálculos dos valores da viagem.
@@ -27,12 +99,12 @@ async function estimate(req: Request, res: Response): Promise<any> {
             "destination": string
         }
     */
-    const { customer_id, origin,  destination } = req.body;
+    const { customer_id, origin, destination } = req.body;
 
     //Validações: 1) Endereços não podem estar em branco; 2) user_id não pode estar em branco; 3)Origem e Destion não podem ser iguais
     const valid: boolean = validate_entries([customer_id, origin, destination]);
-    if(valid == false || origin == destination) {
-        return res.status(400).json({ 
+    if (valid == false || origin == destination) {
+        return res.status(400).json({
             "error_code": "INVALID_DATA",
             "error_description": "Os dados fornecidos no corpo da requisição são inválidos"
         });
@@ -53,7 +125,11 @@ async function estimate(req: Request, res: Response): Promise<any> {
     /**
      * Calcular a rota na API Routes
      * Listar os motoristas que aceitariam a viagem(km min.) e valor da corrida
-     */
+    */
+
+    /**Calcular a rota pela Routes API */
+    var route_obj: string = await computeRoute([origin, destination]);
+    return res.status(200).json(route_obj);
 
     //Retorno do endpoint
     /**
