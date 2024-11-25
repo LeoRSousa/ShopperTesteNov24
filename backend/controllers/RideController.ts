@@ -6,6 +6,11 @@ function test(req: Request, res: Response): any {
     });
 }
 
+async function drivers(distance: number): Promise<any[]> {
+
+    return[];
+}
+
 /**[Rotes API - Google Maps]
  * Recebe as coordenadas e envia para a API calcular e retornar a distancia e o tempo
  */
@@ -30,7 +35,7 @@ async function computeRoute(coordinates: string[]): Promise<string> {
             "location": {
                 "latLng": {
                     "latitude": destination[0],
-                    "longitude": destination[1] 
+                    "longitude": destination[1]
                 }
             }
         },
@@ -62,11 +67,7 @@ async function computeRoute(coordinates: string[]): Promise<string> {
             throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
         }
         const result = await response.json();
-        const result_filtered = {
-            "distance": result.routes[0].distanceMeters,
-            "duration": result.routes[0].duration
-        }
-        return JSON.stringify(result_filtered);
+        return JSON.stringify(result);
     } catch (error: any) {
         console.error(error);
         return "Erro ao obter rotas, contate o desenvolvedor para checar os logs!"
@@ -128,8 +129,33 @@ async function estimate(req: Request, res: Response): Promise<any> {
     */
 
     /**Calcular a rota pela Routes API */
-    var route_obj: string = await computeRoute([origin, destination]);
-    return res.status(200).json(route_obj);
+    var route: string = await computeRoute([origin, destination]);
+    var route_obj = JSON.parse(route);
+    const result_filtered = {
+        "distance": route_obj.routes[0].distanceMeters,
+        "duration": route_obj.routes[0].duration
+    }
+
+    const origin_obj: string[] = origin[0].split(',');
+    const destination_obj: string[] = destination[1].split(',');
+
+    const response_body = {
+        "origin": {
+            "latitude": Number(origin_obj[0]),
+            "longitude": Number(origin_obj[1])
+        },
+        "destination": {
+            "latitude": Number(destination_obj[0]),
+            "longitude": Number(destination_obj[0])
+        },
+        "distance": result_filtered.distance,
+        "duration": result_filtered.duration,
+        "options": [/**array de Drivers */],
+        "routeResponse": route_obj //= Resposta original da rota do Google
+    }
+
+
+    return res.status(200).json(/** */);
 
     //Retorno do endpoint
     /**

@@ -53,24 +53,24 @@ services:
       - shopperteste-network
 
   frontend:
-    # image: node:20
+    image: node:20
     container_name: frontend
-    # working_dir: /usr/src/app
-    build: 
-      context: ./frontend
+    working_dir: /usr/src/app
+    # build: 
+    #   context: ./frontend
     depends_on:
       - backend
     environment:
       NODE_ENV: production
     ports:
       - "80:3000"
-    # volumes:
-    #   - ./frontend:/usr/src/app
-    #   - ./frontend:/usr/src/app/node_modules
-    develop:
-      watch:
-        - path: ./frontend/package.json
-          action: rebuild
+    volumes:
+      - ./frontend:/usr/src/app
+      - ./frontend:/usr/src/app/node_modules
+    # develop:
+    #   watch:
+    #     - path: ./frontend/package.json
+    #       action: rebuild
     command: sh -c "npm install && npm start"
     networks:
       - shopperteste-network
