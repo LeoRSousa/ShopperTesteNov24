@@ -118,6 +118,19 @@ async function computeRoute(coordinates: string[]): Promise<string> {
     }
 }
 
+/**Motorista válido e km p/ motorista é válida? */
+async function valid_drivers(drivers: any[]): Promise<boolean> {
+    var valid: boolean = true;
+    const _drivers = await DriverDB.findAll({});
+
+    drivers.forEach(driver => {
+        valid = _drivers.some((obj: { driver_id: any; }) => obj.driver_id == driver.driver_id);
+    })
+
+
+    return valid;
+}
+
 function validate_entries(entries: any[]): boolean {
     var valid: boolean = true;
 
@@ -131,7 +144,7 @@ function validate_entries(entries: any[]): boolean {
 
 /** Recebe a origem e o destino da viagem e realiza os cálculos dos valores da viagem.*/
 async function estimate(req: Request, res: Response): Promise<any> {
-const { customer_id, origin, destination } = req.body;
+    const { customer_id, origin, destination } = req.body;
 
     //Validações: 1) Endereços não podem estar em branco; 2) user_id não pode estar em branco; 3)Origem e Destion não podem ser iguais
     const valid: boolean = validate_entries([customer_id, origin, destination]);
@@ -164,7 +177,7 @@ const { customer_id, origin, destination } = req.body;
     const origin_obj: string[] = origin.split(',');
     const destination_obj: string[] = destination.split(',');
 
-    const _drivers: any[] = await drivers(result_filtered.distance/1000);
+    const _drivers: any[] = await drivers(result_filtered.distance / 1000);
 
     //Retorno do endpoint
     /**
@@ -216,6 +229,32 @@ const { customer_id, origin, destination } = req.body;
     return res.status(200).json(response_body);
 }
 
+/** Responsável por confirmar a viagem e gravá-la no histórico.*/
+async function confirm(req: Request, res: Response): Promise<any> {
+    /**Request body:
+    { 
+        "customer_id": string, 
+        "origin": string, 
+        "destination": string, 
+        "distance": number, 
+        "duration": string, 
+        "driver": { 
+            "id": number, 
+            "name": string 
+        }, 
+        "value": number 
+    }
+     */
+    const { customer_id, origin, destination, distance, duration, driver, value } = req.body;
+
+    const valid: boolean = validate_entries([customer_id, origin, destination]);
+    if (valid == false || origin == destination) {
+        return res.status(400).json({
+            "error_code": "INVALID_DATA",
+            "error_description": "Os dados fornecidos no corpo da requisição são inválidos"
+        });
+    }
+}
 
 module.exports = {
     test,
