@@ -8,7 +8,8 @@ const connect = new Sequelize(
         host: 'localhost',
         port: 15432,
         dialect: 'postgres',
-        logging: false
+        logging: false,
+        timezone: '-03:00'
     }
 );
 

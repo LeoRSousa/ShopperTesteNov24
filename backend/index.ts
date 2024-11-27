@@ -1,11 +1,13 @@
 import express, { Express, Request, Response } from "express";
 
+const cors = require('cors');
 const app: Express = express();
 const port = 8000;
 
 const connect = require('./database.js');
 
 app.use(express.json());
+app.use(cors());
 // app.use(express.urlencoded({ extended: false })); //N sei pra que é
 
 app.get("/", (req: Request, res: Response) => {

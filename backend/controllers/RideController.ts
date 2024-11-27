@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
+const dayjs = require('dayjs');
 const DriverDB = require('../models_DB/driver');
 const ReviewDB = require('../models_DB/review');
+const RideDB = require('../models_DB/ride');
+const CustomerDB = require('../models_DB/customer');
 import { Driver } from '../models/Driver';
 import { Review } from "../models/Review";
-
-function test(req: Request, res: Response): any {
-    return res.status(200).json({
-        message: 'Success'
-    });
-}
+const path = require('path');
+const envPath = path.resolve(__dirname, '../../.env');
+require('dotenv').config({ path: envPath });
 
 /**Faz o join na tabela (feat futura, adaptar o sequelize para realizar isso) */
 export async function driversAndReviews(): Promise<any[]> {
@@ -59,29 +59,17 @@ async function drivers(distance: number): Promise<any[]> {
  * Recebe as coordenadas e envia para a API calcular e retornar a distancia e o tempo
  */
 async function computeRoute(coordinates: string[]): Promise<string> {
-    const origin: string[] = coordinates[0].split(',');
-    const destination: string[] = coordinates[1].split(',');
     const myHeaders: Headers = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("X-Goog-Api-Key", "AIzaSyAgB4kpNS6VLRoA2Vk0a15EFU_H9PpXaI8");
-    myHeaders.append("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline");
+    myHeaders.append("X-Goog-Api-Key", `${process.env.GOOGLE_API}`);
+    myHeaders.append("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.startLocation,routes.legs.endLocation");
 
     const req_body: string = JSON.stringify({
         "origin": {
-            "location": {
-                "latLng": {
-                    "latitude": origin[0],
-                    "longitude": origin[1]
-                }
-            }
+            "address": coordinates[0]
         },
         "destination": {
-            "location": {
-                "latLng": {
-                    "latitude": destination[0],
-                    "longitude": destination[1]
-                }
-            }
+            "address": coordinates[1]
         },
         "travelMode": "DRIVE",
         "routingPreference": "TRAFFIC_AWARE",
@@ -119,16 +107,16 @@ async function computeRoute(coordinates: string[]): Promise<string> {
 }
 
 /**Motorista válido e km p/ motorista é válida? */
-async function valid_drivers(drivers: any[]): Promise<boolean> {
-    var valid: boolean = true;
-    const _drivers = await DriverDB.findAll({});
+async function valid_drivers(driver_id: number, distance: number): Promise<number> {
+    var value: number = 200;
+    const _driver: Driver = await DriverDB.findOne({ where: { driver_id } });
 
-    drivers.forEach(driver => {
-        valid = _drivers.some((obj: { driver_id: any; }) => obj.driver_id == driver.driver_id);
-    })
+    if (_driver != null) {
+        value = _driver.km <= distance ? 200 : 406
+    }
+    else value = 404;
 
-
-    return valid;
+    return value;
 }
 
 function validate_entries(entries: any[]): boolean {
@@ -174,9 +162,6 @@ async function estimate(req: Request, res: Response): Promise<any> {
         "duration": route_obj.routes[0].duration
     }
 
-    const origin_obj: string[] = origin.split(',');
-    const destination_obj: string[] = destination.split(',');
-
     const _drivers: any[] = await drivers(result_filtered.distance / 1000);
 
     //Retorno do endpoint
@@ -213,12 +198,12 @@ async function estimate(req: Request, res: Response): Promise<any> {
     */
     const response_body = {
         "origin": {
-            "latitude": Number(origin_obj[0]),
-            "longitude": Number(origin_obj[1])
+            "latitude": Number(route_obj.routes[0].legs[0].startLocation.latLng.latitude),
+            "longitude": Number(route_obj.routes[0].legs[0].startLocation.latLng.longitude)
         },
         "destination": {
-            "latitude": Number(destination_obj[0]),
-            "longitude": Number(destination_obj[1])
+            "latitude": Number(route_obj.routes[0].legs[0].endLocation.latLng.latitude),
+            "longitude": Number(route_obj.routes[0].legs[0].endLocation.latLng.longitude)
         },
         "distance": result_filtered.distance,
         "duration": result_filtered.duration,
@@ -247,16 +232,188 @@ async function confirm(req: Request, res: Response): Promise<any> {
      */
     const { customer_id, origin, destination, distance, duration, driver, value } = req.body;
 
-    const valid: boolean = validate_entries([customer_id, origin, destination]);
+    /**Validação dos campos em branco */
+    const valid: boolean = validate_entries([customer_id, origin, destination, distance, duration, driver, value]);
     if (valid == false || origin == destination) {
         return res.status(400).json({
             "error_code": "INVALID_DATA",
-            "error_description": "Os dados fornecidos no corpo da requisição são inválidos"
+            "error_description": "Os dados fornecidos no corpo da requisição são inválidos."
+        });
+    }
+
+    /**Validação do motorista e KM */
+    const validDriverKm: number = await valid_drivers(driver, distance);
+    if (validDriverKm != 200) {
+        if (validDriverKm == 404) return res.status(404).json({
+            "error_code": "DRIVER_NOT_FOUND",
+            "error_description": "Motorista não encontrado"
+        });
+        else if (validDriverKm == 406) return res.status(406).json({
+            "error_code": "INVALID_DISTANCE",
+            "error_description": "Quilometragem inválida para o motorista"
+        });
+    }
+
+    const ride_obj = {
+        "date": dayjs().format(),
+        "origin": origin,
+        "destination": destination,
+        "distance": distance,
+        "duration": duration,
+        "value": value,
+        "driver_id": driver,
+        "customer_id": customer_id,
+    };
+    // console.log(ride_obj);
+
+    try {
+        const _new = await RideDB.create(ride_obj);
+        return res.status(200).json({ "success": true });
+    } catch (error) {
+        return res.status(400).json({
+            "error_code": "INVALID_DATA",
+            "error_description": "Os dados fornecidos no corpo da requisição são inválidos.",
+            error
         });
     }
 }
 
+async function getRidesByIds(req: Request, res: Response): Promise<any> {
+    const customerId = req.params.customer_id;  // Acessando o parâmetro da URL
+    const driverId = req.query.driver_id;
+
+    //Validação de NaN
+    if (isNaN(Number(customerId))) return res.status(400).json({
+        message: 'Passageiro informado não é válido'
+    });
+
+    //Verifica se usuário existe
+    const customer = await CustomerDB.findOne({
+        where: {
+            customer_id: customerId
+        }
+    });
+    if (customer == null) {
+        return res.status(400).json({
+            message: 'Usuário não encontrado'
+        });
+    }
+
+    //Se não houver motorista especificado,
+    if (Number(driverId) == 18051998) {
+        const rides = await RideDB.findAll({
+            where: { customer_id: customerId }
+        });
+
+        if (rides != null) {
+            if (rides.length == 0) return res.status(404).json({
+                "error_code": "NO_RIDES_FOUND",
+                "error_description": "Nenhum registro encontrado"
+            });
+
+            var rides_filtered: any[] = [];
+            await Promise.all(rides.map(async (ride: any) => {
+                const thisDriver = await DriverDB.findOne({
+                    where: {
+                        driver_id: ride.driver_id
+                    }
+                });
+
+                const _ride = {
+                    "id": ride.ride_id,
+                    "date": ride.date,
+                    "origin": ride.origin,
+                    "destination": ride.destination,
+                    "distance": Number(ride.distance),
+                    "duration": ride.duration,
+                    "driver": {
+                        "id": thisDriver.driver_id,
+                        "name": thisDriver.name
+                    },
+                    "value": Number(ride.value)
+                };
+
+                rides_filtered.push(_ride);
+            }));
+
+            return res.status(200).json({
+                "customer_id": String(customerId),
+                "rides": rides_filtered,
+            });
+        } else {
+            return res.status(400).json({
+                error_code: 'Erro'
+            });
+        }
+    } else {
+        //Verifica se motorista existe
+        const driver = await DriverDB.findOne({
+            where: {
+                driver_id: driverId
+            }
+        });
+        if (isNaN(Number(driverId))) {
+            return res.status(400).json({
+                "error_code": "INVALID_DRIVER",
+                "error_description": 'Motorista invalido'
+            });
+        }
+        if (driver == null) {
+            return res.status(404).json({
+                "error_code": "INVALID_DRIVER",
+                "error_description": 'Motorista invalido'
+            });
+        }
+
+        const rides = await RideDB.findAll({
+            where: { customer_id: customerId, driver_id: driverId }
+        })
+
+        if (rides != null) {
+            if (rides.length == 0) return res.status(404).json({
+                "error_code": "NO_RIDES_FOUND",
+                "error_description": "Nenhum registro encontrado"
+            });
+
+            var rides_filtered: any[] = [];
+            await Promise.all(rides.map(async (ride: any) => {
+                const thisDriver = await DriverDB.findOne({
+                    where: {
+                        driver_id: ride.driver_id
+                    }
+                });
+
+                const _ride = {
+                    "id": ride.ride_id,
+                    "date": ride.date,
+                    "origin": ride.origin,
+                    "destination": ride.destination,
+                    "distance": Number(ride.distance),
+                    "duration": ride.duration,
+                    "driver": {
+                        "id": thisDriver.driver_id,
+                        "name": thisDriver.name
+                    },
+                    "value": Number(ride.value)
+                };
+
+                rides_filtered.push(_ride);
+            }));
+
+            return res.status(200).json({
+                "customer_id": String(customerId),
+                "rides": rides_filtered,
+            });
+        } else {
+            return res.status(400).json({
+                message: 'Erro'
+            });
+        }
+    }
+}
+
 module.exports = {
-    test,
-    estimate
+    estimate,
+    confirm,
+    getRidesByIds,
 };

@@ -36,3 +36,17 @@
     transform: rotate(360deg);
   }
 }
+
+table {
+  width: 100%;
+  font-size: initial;
+  align-content: center;
+  display: inline-table;
+  border-collapse: collapse;
+  border: none;
+}
+
+td, th {
+  border: 1px solid rgb(148, 144, 144); /* Borda para as células internas */
+  padding: 8px;
+}

@@ -1,1 +1,5 @@
 Run docker: docker compose up -d
+
+_____________________________________
+
+const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?size=600x400&path=enc:${ENCODED_POLYLINE}&key=${API_KEY}`;

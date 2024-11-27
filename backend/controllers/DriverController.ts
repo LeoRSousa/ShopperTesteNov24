@@ -36,7 +36,24 @@ async function getDrivers(req: Request, res: Response): Promise<any> {
     });
 }
 
+async function getDriver(req: Request, res: Response): Promise<any> {
+    const { driver_id } = req.body;
+    const _driver: Driver = await DriverDB.findOne({ where: { driver_id } });
+
+    if(_driver != null) {
+        return res.status(200).json({
+            message: 'Success',
+            _driver
+        });
+    } else {
+        return res.status(400).json({
+            message: 'Driver not found',
+        });
+    }
+}
+
 module.exports = {
     getDrivers,
+    getDriver,
     driversAndReviews
 };

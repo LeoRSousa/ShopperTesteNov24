@@ -21,12 +21,12 @@ CREATE TABLE review (
 );
 
 CREATE TABLE ride (
-    ride_id bigint PRIMARY KEY,
+    ride_id serial PRIMARY KEY,
     date timestamp NOT NULL,
-    origin varchar(100) NOT NULL,
-    destination varchar(100) NOT NULL,
+    origin varchar(500) NOT NULL,
+    destination varchar(500) NOT NULL,
     distance decimal NOT NULL,
-    duration decimal NOT NULL,
+    duration varchar(50) NOT NULL,
     value decimal NOT NULL,
     driver_id bigint NOT NULL,
     customer_id bigint NOT NULL,
