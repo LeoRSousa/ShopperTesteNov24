@@ -15,18 +15,18 @@ services:
     networks:
       - shopperteste-network
 
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: pgadminweb
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: "teste@gmail.com"
-  #     PGADMIN_DEFAULT_PASSWORD: "teste123"
-  #   ports:
-  #     - "6543:80"
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - shopperteste-network
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadminweb
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "teste@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "teste123"
+    ports:
+      - "6543:80"
+    depends_on:
+      - postgres
+    networks:
+      - shopperteste-network
 
   backend:
     image: node:20
@@ -59,7 +59,7 @@ services:
       - "80:3000"
     volumes:
       - ./frontend:/usr/src/app
-      - ./frontend:/usr/src/app/node_modules
+      - usr/src/app/node_modules
     command: sh -c "npm install && npm start"
     networks:
       - shopperteste-network
