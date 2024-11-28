@@ -5,7 +5,7 @@ const connect = new Sequelize(
     'teste',
     'teste123',
     {
-        host: 'localhost',
+        host: 'postgresdb',
         port: 15432,
         dialect: 'postgres',
         logging: false,
