@@ -46,11 +46,11 @@ export default function GetTravel({ getTravel, customer_id, origin_address, dest
         try {
             const response = await fetch("http://localhost:8000/ride/estimate", requestOptions);
             if (!response.ok) {
+                const result = await response.json();
+                if(result.error_code === "API_ERROR") alert("Erro na API. Contate o desenvolvedor!");
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
             const result = await response.json();
-            // console.log(result.options);
-            // setDriverOptions(result.options);
             customer_id(id);
             origin_address(origin);
             destination_address(destination);

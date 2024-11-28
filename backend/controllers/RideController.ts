@@ -156,6 +156,10 @@ async function estimate(req: Request, res: Response): Promise<any> {
     //Caso passe pelas validações:
     /**Calcular a rota pela Routes API */
     var route: string = await computeRoute([origin, destination]);
+    if(route == "Erro ao obter rotas, contate o desenvolvedor para checar os logs!") return res.status(401).json({
+        "error_code": "API_ERROR",
+        "error_description": "Erro na API. Contate o desenvolvedor!"
+    });
     var route_obj = JSON.parse(route);
     const result_filtered = {
         "distance": route_obj.routes[0].distanceMeters,
