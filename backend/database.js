@@ -6,7 +6,7 @@ const connect = new Sequelize(
     'teste123',
     {
         host: 'postgresdb',
-        port: 15432,
+        port: 5432,
         dialect: 'postgres',
         logging: false,
         timezone: '-03:00'
