@@ -59,9 +59,10 @@ async function drivers(distance: number): Promise<any[]> {
  * Recebe as coordenadas e envia para a API calcular e retornar a distancia e o tempo
  */
 async function computeRoute(coordinates: string[]): Promise<string> {
+    const API_KEY = process.env.GOOGLE_API == undefined ? 'AIzaSyAgB4kpNS6VLRoA2Vk0a15EFU_H9PpXaI8' : process.env.GOOGLE_API;
     const myHeaders: Headers = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("X-Goog-Api-Key", `${process.env.GOOGLE_API}`);
+    myHeaders.append("X-Goog-Api-Key", API_KEY);
     myHeaders.append("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.startLocation,routes.legs.endLocation");
 
     const req_body: string = JSON.stringify({
