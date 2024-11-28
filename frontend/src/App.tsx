@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import GetTravel from './components/GetTravel.tsx';
 import DriverOptions from "./components/DriverOptions.tsx";
@@ -29,6 +29,12 @@ function App() {
   const [travel, seTravel] = useState<any>();
   const [driver, setDriver] = useState<DriverChose>();
   const [page, setPage] = useState<number>(1);
+
+  useEffect(() => {
+    if(driver) {
+      handleConfirmTravel();
+    }
+  }, [driver]);
 
   const handleCustumer = (id: number) => {
     setCustumer(id);
