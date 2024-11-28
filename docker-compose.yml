@@ -11,7 +11,7 @@ services:
     volumes:
       # - /postgres-volume:/var/lib/postgresql/data
       - ./postgres-volume:/var/lib/postgresql/data
-    command: bash -c "cd ./postgres-volume && mkdir pg_notify && mkdir pg_tblspc && mkdir pg_replslot && mkdir pg_twophase && mkdir pg_stat_tmp && mkdir pg_logical/snapshots && mkdir pg_logical/mappings && mkdir pg_commit_ts && mkdir pg_snapshot && docker-entrypoint.sh postgres"
+    command: bash -c "cd postgres-volume && mkdir pg_notify && mkdir pg_tblspc && mkdir pg_replslot && mkdir pg_twophase && mkdir pg_stat_tmp && mkdir pg_logical/snapshots && mkdir pg_logical/mappings && mkdir pg_commit_ts && mkdir pg_snapshot && docker-entrypoint.sh postgres"
     networks:
       - shopperteste-network
 
