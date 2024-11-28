@@ -42,13 +42,6 @@ services:
       POSTGRES_PASSWORD: "senha_teste"
       POSTGRES_DB: "mydb"
     command: sh -c "npm install && npm start"
-    develop:
-      watch:
-        - path: ./backend/package.json
-          action: rebuild
-        - path: ./app
-          target: /usr/src/app
-          action: sync
     depends_on:
       - postgres
     networks:
